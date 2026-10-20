@@ -1,62 +1,61 @@
 \documentclass[11pt]{article}
-\usepackage[margin=0.9in]{geometry}
+\usepackage[margin=0.8in]{geometry}
 \usepackage{times}
 \usepackage{enumitem}
 \usepackage{titlesec}
 \usepackage{hyperref}
 \usepackage{parskip}
-\setlength{\parskip}{4pt}
-\setlist{leftmargin=1.4em, itemsep=1pt, topsep=2pt}
-\titlespacing*{\section}{0pt}{9pt}{4pt}
+\setlength{\parskip}{3pt}
+\setlist{leftmargin=1.4em, itemsep=0pt, topsep=1pt}
+\titlespacing*{\section}{0pt}{7pt}{3pt}
 \titleformat{\section}{\normalfont\large\bfseries}{}{0pt}{}
 \pagestyle{empty}
 
-\title{\vspace{-1.5em}\textbf{Two Extensions of Reusable Clinical Skill Libraries:\\
+\title{\vspace{-1.6em}\textbf{Two Extensions of Reusable Clinical Skill Libraries:\\
 Weak-to-Strong Transfer and Validated Skill Updates}}
-\author{\vspace{-0.3em}Yiming Xiong \quad Jinkun Yang}
+\author{\vspace{-0.4em}Yiming Xiong \quad Jinkun Yang}
 \date{}
 
 \begin{document}
 \maketitle
-\vspace{-1em}
+\vspace{-1.1em}
 
 \section*{Problem and why it matters}
 Clinical LLM agents can diagnose patients and, between encounters, revise a persistent
-\emph{skill library} instead of their weights. In our prior work (\textsc{DxSkill},
-submitted to ACL ARR), a student that revises its own skills on MIMIC-CDM improves from
-77.5\% to 86.9--89.1\% accuracy depending on feedback, and a stronger reviser helps mainly
-when outcome feedback is weak. We also found skill revision is \emph{not} reliably safe: a
-useful skill can be silently deleted, and a transient tool error can be hardened into a
-harmful permanent restriction, even with outcome feedback available. These two findings
-motivate two separate, \emph{independent} follow-up tracks (A and B), not one combined study.
+\emph{skill library} instead of their weights. In prior work (\textsc{DxSkill}, submitted
+to ACL ARR), a student revising its own skills on MIMIC-CDM improves from 77.5\% to
+86.9--89.1\% depending on feedback, and a stronger reviser helps mainly when feedback is
+weak. Skill revision is also not reliably safe: a useful skill can be silently deleted,
+and a transient tool error can harden into a permanent restriction, even with outcome
+feedback available. These findings motivate two separate, \emph{independent} follow-up
+tracks (A and B), not one combined study.
 
 \textbf{Direction A} (inspired by OpenAI's 2023 weak-to-strong generalization work): can a
-weaker model teach a stronger diagnostic agent, not by supervising its predictions
-directly, but by authoring and maintaining the skill library the strong model executes?
+weaker model teach a stronger diagnostic agent by authoring and maintaining the skill
+library the strong model executes, rather than supervising its predictions directly?
 Crossing diagnoser and reviser strength separates task-execution ability from
 reflection/knowledge-organization ability. \textbf{Direction B}: can skill revision be
-made safer by validating each proposed update on a holdout buffer before committing it, so
-useful skills aren't deleted and transient errors aren't hardened into restrictions?
+made safer by validating each proposed update on a holdout buffer before committing it,
+so useful skills aren't deleted and transient errors aren't hardened into restrictions?
 
 \section*{Data, and whether we have access}
 MIMIC-CDM 1.1 (from MIMIC-IV): 250 training / 400 held-out patients across appendicitis,
 cholecystitis, diverticulitis, and pancreatitis. We already have data access (completed
-MIMIC data-use training) and a working pipeline from DxSkill (diagnosis tools,
-reflection/skill-revision loop, checkpointed libraries), so no new access or
-infrastructure is needed to begin either direction.
+MIMIC data-use training) and a working DxSkill pipeline (diagnosis tools,
+reflection/revision loop, checkpointed libraries), so no new access or infrastructure is
+needed to begin either direction.
 
 \section*{Approach and baselines}
 \textbf{A -- weak-to-strong skill transfer.} Baseline: DxSkill's student-self-revises
-condition (86.9\%) and teacher-edits-weak-student condition (Qwen3.8-27B revises,
-Qwen3-30B-A3B diagnoses). New: a full diagnoser-strength $\times$ reviser-strength grid,
-\{weak, strong\} diagnoser $\times$ \{weak, strong\} reviser, with feedback (reference
-diagnosis) fixed. The weak-revises-strong cell is the key untested condition.
+(86.9\%) and teacher-edits-weak-student (Qwen3.8-27B revises, Qwen3-30B-A3B diagnoses)
+conditions. New: a full diagnoser$\times$reviser strength grid, \{weak,strong\} $\times$
+\{weak,strong\}, with feedback fixed (reference diagnosis). The weak-revises-strong cell
+is the key untested condition.
 
 \textbf{B -- validation-buffer gating.} Baseline: DxSkill's current ungated revision. New:
-after each proposed skill update, evaluate the candidate library on a small fixed holdout
-buffer (disjoint from the 400-patient eval set) before committing it; accept only if
-buffer accuracy doesn't regress beyond tolerance $\varepsilon$, else roll back to the
-prior checkpoint.
+evaluate each proposed update on a small fixed holdout buffer (disjoint from the eval set)
+before committing it; accept only if buffer accuracy doesn't regress beyond tolerance
+$\varepsilon$, else roll back to the prior checkpoint.
 
 \section*{How we'll evaluate it}
 \textbf{A:} accuracy on the frozen 400-patient set per diagnoser$\times$reviser cell
@@ -69,10 +68,10 @@ Figure 7 case).
 
 \section*{Milestones through Nov 30}
 \begin{itemize}
-\item \textbf{Oct 20--Nov 2 (A):} Build the diagnoser$\times$reviser grid; run all four cells, including the new weak-revises-strong condition.
-\item \textbf{Nov 3--16 (A):} Analyze whether gains trace to execution strength or reflection strength; iterate if the signal is unclear.
-\item \textbf{Nov 10--23 (B):} Design/implement the holdout buffer and checkpointed rollback; run a small $\varepsilon$ sweep.
-\item \textbf{Nov 24--30:} Consolidate whichever results are ready into a progress report. We expect clearer results on A by then; B is a longer-horizon track and may continue past Nov 30.
+\item \textbf{Oct 20--Nov 2 (A):} Build the diagnoser$\times$reviser grid; run all four cells.
+\item \textbf{Nov 3--16 (A):} Analyze whether gains trace to execution or reflection strength.
+\item \textbf{Nov 10--23 (B):} Implement the holdout buffer and rollback; run a tolerance sweep.
+\item \textbf{Nov 24--30:} Consolidate ready results; Direction B may continue past Nov 30.
 \end{itemize}
 
 \section*{What we need from the course staff}
