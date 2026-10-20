@@ -9,9 +9,9 @@
 \titlespacing*{\subsection}{0pt}{4pt}{2pt}
 \pagestyle{empty}
 
-\title{\vspace{-2em}\textbf{Weak-to-Strong Transfer of Clinical Diagnostic Skills via a
-Validated, Reusable Skill Library}\vspace{-1em}}
-\author{Yiming Xiong \quad Jiawei Xu \\[2pt] \small \textit{(edit team member list as needed)}}
+\title{\vspace{-2em}\textbf{Two Extensions of Reusable Clinical Skill Libraries:
+Weak-to-Strong Transfer and Validated Skill Updates}\vspace{-1em}}
+\author{Yiming Xiong \quad Jinkun Yang}
 \date{}
 
 \begin{document}
@@ -21,19 +21,23 @@ Validated, Reusable Skill Library}\vspace{-1em}}
 \section*{Problem and why it matters}
 Language-model clinical agents can diagnose patients and, between encounters, revise a
 persistent \emph{skill library} instead of their weights. In our prior work (\textsc{DxSkill},
-submitted to ACL ARR with Jiawei Xu), a student agent that revises its own skills on
+submitted to ACL ARR), a student agent that revises its own skills on
 MIMIC-CDM improves from 77.5\% to 86.9--89.1\% accuracy depending on the feedback it
 receives, and a stronger reviser only helps when outcome feedback is weak. We also found
 that skill revision is \emph{not} reliably safe: a useful skill can be silently deleted,
 and a transient tool error can be hardened into a harmful permanent restriction, even
-though outcome feedback was available throughout.
-Inspired by OpenAI's 2023 weak-to-strong generalization work, we ask: \textit{can a weaker
-model teach a stronger diagnostic agent not by supervising its predictions directly, but by
-authoring and maintaining a reusable skill library that the strong model then executes?}
-Crossing diagnoser and skill-reviser strength lets us separate two abilities that are
-normally entangled in a single model: raw task execution versus reflection and knowledge
-organization. Understanding this boundary matters for using small, cheap models to
-bootstrap stronger clinical agents safely.
+though outcome feedback was available throughout. These two observations motivate two
+separate, independent follow-up questions, which we treat as two separate experiment
+tracks (Direction A and B below), not one combined study.
+\textbf{Direction A} (inspired by OpenAI's 2023 weak-to-strong generalization work) asks:
+\textit{can a weaker model teach a stronger diagnostic agent not by supervising its
+predictions directly, but by authoring and maintaining a reusable skill library that the
+strong model then executes?} Crossing diagnoser and skill-reviser strength lets us
+separate two abilities normally entangled in a single model: raw task execution versus
+reflection and knowledge organization. \textbf{Direction B} asks: \textit{can we make
+skill revision itself safer}, by validating each proposed update on a holdout buffer
+before committing it, so that useful skills are not silently deleted and transient
+errors are not hardened into permanent restrictions?
 
 \section*{Data and access}
 MIMIC-CDM 1.1 (derived from MIMIC-IV), the benchmark used in our ACL ARR submission:
@@ -42,45 +46,54 @@ and pancreatitis. We already have data access (completed MIMIC training) and a w
 pipeline (diagnosis tool interface, reflection/skill-revision loop, validation and
 checkpointed skill libraries), so no new access is required.
 
-\section*{Approach and baseline}
-\textbf{Baseline.} The DxSkill student-revises-its-own-skills condition with
-reference-diagnosis feedback (86.9\% accuracy) and the existing teacher-edits-weak-student
-condition (Qwen3.8-27B revises, Qwen3-30B-A3B diagnoses) serve as baselines.
-\textbf{New approach.} We extend the $2\times2$ (reviser $\times$ patient order) design
-into a reviser-strength $\times$ diagnoser-strength grid: \{weak, strong\} diagnoser
-crossed with \{weak, strong\} reviser, holding feedback (reference diagnosis) fixed. The
-new weak-to-strong cell (weak reviser edits skills, strong model diagnoses) is the key
-condition. \textbf{Validation buffer.} After each training case's proposed skill
-update, we evaluate the candidate library on a small, fixed holdout buffer set
-(disjoint from the 400-patient evaluation set) \emph{before} committing it. We accept the
-update only if buffer accuracy does not regress beyond a tolerance $\varepsilon$; otherwise
-we roll back to the previous checkpointed library. This directly targets the
-deleted-skill and hardened-restriction failures we documented.
+\section*{Approach and baselines}
+We pursue two independent extensions of DxSkill, each with its own baseline; they share
+the codebase and benchmark but address different questions and are evaluated separately.
+
+\textbf{Direction A: weak-to-strong skill transfer.} Baseline: the existing DxSkill
+student-revises-its-own-skills condition (86.9\% accuracy) and the existing
+teacher-edits-weak-student condition (Qwen3.8-27B revises, Qwen3-30B-A3B diagnoses). New
+approach: extend this into a reviser-strength $\times$ diagnoser-strength grid, \{weak,
+strong\} diagnoser crossed with \{weak, strong\} reviser, holding feedback
+(reference diagnosis) fixed. The new weak-to-strong cell (weak reviser edits skills,
+strong model diagnoses) is the key condition, isolating whether gains depend on task
+execution strength or on reflection/knowledge-organization strength.
+
+\textbf{Direction B: validation-buffer gating.} Baseline: DxSkill's current ungated
+skill revision, which we showed can silently delete a useful skill or harden a
+transient tool error into a permanent restriction. New approach: after each training
+case's proposed skill update, evaluate the candidate library on a small, fixed holdout
+buffer set (disjoint from the 400-patient evaluation set) before committing it; accept
+the update only if buffer accuracy does not regress beyond a tolerance $\varepsilon$,
+otherwise roll back to the previous checkpointed library.
 
 \section*{Evaluation}
-(1) Diagnostic accuracy on the frozen 400-patient held-out set, for each
-diagnoser$\times$reviser cell, with and without the buffer, using paired
-patient-bootstrap intervals as in our ACL ARR submission. (2) Buffer dev-set accuracy at
-each checkpoint, to track accept/reject decisions over training. (3) Qualitative tracing
-of accepted vs.\ rejected skill edits, counting how often the buffer blocks a harmful
-edit or preserves a previously useful skill (cf.\ our Figure 7 case). (4) Comparison of
-whether gains depend on diagnoser strength, reviser strength, or the buffer.
+\textbf{Direction A:} diagnostic accuracy on the frozen 400-patient held-out set for
+each diagnoser$\times$reviser cell, using paired patient-bootstrap intervals as in our
+ACL ARR submission, to locate where weak-to-strong transfer helps or fails.
+\textbf{Direction B:} buffer dev-set accuracy at each checkpoint to track accept/reject
+decisions over training; held-out accuracy with vs.\ without the buffer; and qualitative
+tracing of accepted vs.\ rejected edits, counting how often the buffer blocks a harmful
+edit or preserves a previously useful skill (cf.\ our Figure 7 case).
 
 \section*{Milestones through Nov 30}
 \begin{itemize}
-\item \textbf{Oct 20--26:} Finalize buffer design (holdout split, size, $\varepsilon$ sweep); add checkpointed rollback to the existing codebase.
-\item \textbf{Oct 27--Nov 2:} Run the two new diagonal cells (weak-revises-strong, strong-revises-weak) without the buffer.
-\item \textbf{Nov 3--9:} Add buffer-gated acceptance to all four cells; rerun with the tolerance sweep.
-\item \textbf{Nov 10--16:} Compute accuracy deltas and bootstrap intervals; trace example accept/reject decisions.
-\item \textbf{Nov 17--23:} Analyze the weak-to-strong boundary and the buffer's effect on skill retention/removal.
-\item \textbf{Nov 23--30:} Write up results and prepare the final report.
+\item \textbf{Oct 20--Nov 2 (Direction A):} Implement the reviser-strength $\times$
+diagnoser-strength grid; run the weak-to-strong cell and the remaining three cells.
+\item \textbf{Nov 3--16 (Direction A):} Analyze results and identify where
+execution strength vs.\ reflection strength drives improvement; iterate if the signal
+is unclear.
+\item \textbf{Nov 10--23 (Direction B):} Design and implement the holdout buffer and
+checkpointed rollback; run a small $\varepsilon$ sweep (overlaps with Direction A
+analysis since the two tracks are independent).
+\item \textbf{Nov 24--30:} Consolidate whichever results are ready into a progress
+report. We expect Direction A to have clearer results by this point; Direction B may
+still be in progress and is treated as a longer-horizon track that can continue past
+Nov 30 if needed.
 \end{itemize}
 
 \section*{What we need from the course staff}
-Additional compute/API budget for the strong-model diagnoser and reviser calls (the
-strong model is substantially more expensive per case than our weak student); feedback
-on the holdout-buffer design and tolerance choice; confirmation that building on our
-existing ACL ARR submission (same codebase and benchmark) is an acceptable scope for
-this course project.
+GPU resources on the Miata server are enough for both directions; no additional
+compute or API budget is needed.
 
 \end{document}
