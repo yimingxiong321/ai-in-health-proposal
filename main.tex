@@ -23,10 +23,14 @@ Weak-to-Strong Transfer and Validated Skill Updates}}
 \section*{Problem and why it matters}
 Clinical LLM agents diagnose patients and, between encounters, revise a persistent
 \emph{skill library} instead of their weights. \textsc{DxSkill}, the first phase of this
-project (complete, submitted to ACL ARR), built this framework and found that accuracy
-depends heavily on feedback (77.5\%$\to$86.9--89.1\%) and that skill revision is not
-reliably safe -- a useful skill can be silently deleted, and a transient tool error can
-harden into a permanent restriction, even with outcome feedback available. This proposal
+project (complete, submitted to ACL ARR), built this framework: a diagnosing agent
+reflects on each MIMIC-CDM patient encounter and revises a persistent, human-readable
+skill library under five feedback conditions (from trajectory-only reflection to
+clinical guidelines and personalized teacher advice), with model weights kept fixed
+throughout. We found that accuracy depends heavily on which feedback is used
+(77.5\%$\to$86.9--89.1\%) and that skill revision is not reliably safe -- a useful skill
+can be silently deleted, and a transient tool error can harden into a permanent
+restriction, even with outcome feedback available. This proposal
 covers the next phase: two independent directions, (A) weak-to-strong skill transfer and
 (B) buffer-validated skill updates, described below.
 
