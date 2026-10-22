@@ -42,40 +42,41 @@ on a holdout buffer before committing it?
 
 \section*{Data, and whether we have access}
 MIMIC-CDM 1.1 (from MIMIC-IV): 250 training / 400 held-out patients across appendicitis,
-cholecystitis, diverticulitis, and pancreatitis. We already have data access (completed
-MIMIC data-use training) and a working DxSkill pipeline (diagnosis tools,
-reflection/revision loop, checkpointed libraries), so no new access or infrastructure is
-needed to begin either direction.
+cholecystitis, diverticulitis, and pancreatitis.
 
 \section*{Approach and baselines}
-We define ``weak'' and ``strong'' by each model's measured no-skill accuracy on MIMIC-CDM
-(DxSkill Table 1), not by parameter count: \textbf{weak} = Qwen3-30B-A3B-Instruct-2507-FP8
-(77.5\%); \textbf{strong} = Qwen3.8-27B-FP8 with thinking enabled (85.1\%).
+We define ``weak'' and ``strong'' by each model's measured no-skill diagnostic accuracy on
+MIMIC-CDM, not by parameter count: \textbf{weak} = Qwen3-30B-A3B-Instruct-2507-FP8
+(77.5\%); \textbf{strong} = Qwen3.8-27B-FP8 with thinking enabled (85.1\%). Our baselines
+are DxSkill's own feedback conditions (up to 86.9\% with student self-revision) and
+DxEvolve (Ren et al., 2026), an existing experience-distillation method we already
+compare against.
 
-\textbf{A -- weak-to-strong skill transfer (primary direction).} Baseline: DxSkill's
-student-self-revises (86.9\%) and teacher-edits-weak-student conditions. New: the full
-diagnoser$\times$reviser grid, \{weak,strong\}$\times$\{weak,strong\}, feedback fixed
-(reference diagnosis). The weak-revises-strong cell is the key untested condition.
+\textbf{A -- weak-to-strong skill transfer (primary direction).} We test every
+combination of a weak or strong model as the diagnosing agent with a weak or strong model
+as the skill reviser -- four combinations in total -- holding feedback (reference
+diagnosis) fixed. The case where a weak model revises the skill library for a strong
+diagnosing agent is the key untested condition.
 
-\textbf{B -- validation-buffer gating (secondary direction).} Baseline: DxSkill's current
-ungated revision. New: a fixed holdout buffer of patients drawn from the training pool,
-disjoint from the training stream and the 400-patient eval set. We compare \textbf{two
-buffer sizes} (40 and 100 patients) crossed with an $\varepsilon$ tolerance sweep, since a
-small buffer makes accept/reject decisions noisy; accept an update only if buffer accuracy
-doesn't regress beyond $\varepsilon$, else roll back to the prior checkpoint.
+\textbf{B -- validation-buffer gating (secondary direction).} Before committing each
+proposed skill update, we evaluate the candidate library on a small, fixed holdout buffer
+of patients, kept separate from both the training stream and the 400-patient evaluation
+set. We compare two buffer sizes (40 and 100 patients), each with a tolerance
+$\varepsilon$ for how much accuracy may drop; an update is kept only if it stays within
+that tolerance, otherwise we roll back to the previous version of the library.
 
 \section*{How we'll evaluate it}
-\textbf{A:} accuracy on the frozen 400-patient set per diagnoser$\times$reviser cell, with
-paired patient-bootstrap intervals (as in our ACL ARR submission), to locate where
-weak-to-strong transfer helps or fails.
+\textbf{A:} accuracy on the frozen 400-patient set for each of the four
+diagnosing-model/skill-reviser combinations, with paired patient-bootstrap intervals (as
+in our ACL ARR submission), to locate where weak-to-strong transfer helps or fails.
 \textbf{B:} buffer-set accuracy per checkpoint across both buffer sizes; held-out accuracy
 with vs.\ without the buffer; qualitative tracing of accepted/rejected edits (cf.\ our
 Figure 7 case).
 
 \section*{Milestones through Nov 30}
 \begin{itemize}
-\item \textbf{Oct 20--26:} Finalize the weak/strong grid and buffer-size/$\varepsilon$ design.
-\item \textbf{Oct 27--Nov 9 (A, primary):} Run all four diagnoser$\times$reviser cells.
+\item \textbf{Oct 20--26:} Finalize the four weak/strong combinations and the buffer-size/$\varepsilon$ design.
+\item \textbf{Oct 27--Nov 9 (A, primary):} Run all four diagnosing-model/skill-reviser combinations.
 \item \textbf{Nov 10--16 (A):} Analyze whether gains trace to execution or reflection strength.
 \item \textbf{Nov 10--23 (B, secondary):} Implement the holdout buffer (two sizes) and rollback; run the $\varepsilon$ sweep far enough to have \textbf{preliminary B results by Nov 23} for the presentation/report.
 \item \textbf{Nov 24--30:} Consolidate Direction A (primary) and Direction B (preliminary) results into the report.
