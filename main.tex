@@ -59,27 +59,23 @@ diagnosis) fixed. The case where a weak model revises the skill library for a st
 diagnosing agent is the key untested condition.
 
 \textbf{B -- validation-buffer gating (secondary direction).} Before committing each
-proposed skill update, we evaluate the candidate library on a small, fixed holdout buffer
-of patients, kept separate from both the training stream and the 400-patient evaluation
-set. We compare two buffer sizes (40 and 100 patients), each with a tolerance
-$\varepsilon$ for how much accuracy may drop; an update is kept only if it stays within
-that tolerance, otherwise we roll back to the previous version of the library.
+proposed skill update, we evaluate the candidate library on a fixed holdout set of 800
+cases, kept separate from both the training stream and the 400-patient evaluation set. An
+update is kept only if accuracy does not drop by more than a tolerance $\varepsilon$,
+otherwise we roll back to the previous version of the library.
 
 \section*{How we'll evaluate it}
 \textbf{A:} accuracy on the frozen 400-patient set for each of the four
 diagnosing-model/skill-reviser combinations, with paired patient-bootstrap intervals (as
 in our ACL ARR submission), to locate where weak-to-strong transfer helps or fails.
-\textbf{B:} buffer-set accuracy per checkpoint across both buffer sizes; held-out accuracy
-with vs.\ without the buffer; qualitative tracing of accepted/rejected edits (cf.\ our
-Figure 7 case).
+\textbf{B:} accuracy on a fixed holdout set of 800 cases.
 
 \section*{Milestones through Nov 30}
 \begin{itemize}
-\item \textbf{Oct 20--26:} Finalize the four weak/strong combinations and the buffer-size/$\varepsilon$ design.
-\item \textbf{Oct 27--Nov 9 (A, primary):} Run all four diagnosing-model/skill-reviser combinations.
-\item \textbf{Nov 10--16 (A):} Analyze whether gains trace to execution or reflection strength.
-\item \textbf{Nov 10--23 (B, secondary):} Implement the holdout buffer (two sizes) and rollback; run the $\varepsilon$ sweep far enough to have \textbf{preliminary B results by Nov 23} for the presentation/report.
-\item \textbf{Nov 24--30:} Consolidate Direction A (primary) and Direction B (preliminary) results into the report.
+\item \textbf{Oct 20--Nov 2 (A):} Run all four diagnosing-model/skill-reviser combinations.
+\item \textbf{Nov 3--16 (A):} Analyze whether gains trace to execution or reflection strength.
+\item \textbf{Nov 10--23 (B):} Implement the holdout buffer and checkpointed rollback; run a tolerance ($\varepsilon$) sweep.
+\item \textbf{Nov 24--30:} Consolidate whichever results are ready into a progress report; Direction B may continue past Nov 30.
 \end{itemize}
 
 \section*{What we need from the course staff}
