@@ -22,14 +22,13 @@ Weak-to-Strong Transfer and Validated Skill Updates}}
 
 \section*{Problem and why it matters}
 Clinical LLM agents diagnose patients and, between encounters, revise a persistent
-\emph{skill library} instead of their weights. \textbf{Prior work:} in \textsc{DxSkill}
-(currently under review at ACL ARR), we found accuracy depends heavily on feedback
-(77.5\%$\to$86.9--89.1\%) and that skill revision is not reliably safe -- a useful skill
-can be silently deleted, and a transient tool error can harden into a permanent
-restriction, even with outcome feedback available. \textbf{New this semester:} we pursue
-two independent directions, (A) weak-to-strong skill transfer and (B) buffer-validated
-skill updates, described below. Krishanu and Lakshmi are also extending DxSkill; we are
-coordinating with them on which experiments each team runs to avoid duplicating work.
+\emph{skill library} instead of their weights. \textsc{DxSkill}, the first phase of this
+project (complete, submitted to ACL ARR), built this framework and found that accuracy
+depends heavily on feedback (77.5\%$\to$86.9--89.1\%) and that skill revision is not
+reliably safe -- a useful skill can be silently deleted, and a transient tool error can
+harden into a permanent restriction, even with outcome feedback available. This proposal
+covers the next phase: two independent directions, (A) weak-to-strong skill transfer and
+(B) buffer-validated skill updates, described below.
 
 \textbf{Direction A} (inspired by OpenAI's 2023 weak-to-strong generalization work): can a
 weaker model teach a stronger diagnostic agent by authoring and maintaining the skill
@@ -37,13 +36,12 @@ library the strong model executes, rather than supervising its predictions direc
 \textbf{Direction B}: can skill revision be made safer by validating each proposed update
 on a holdout buffer before committing it?
 
-\section*{Data, access, and code}
-MIMIC-CDM 1.1 / MIMIC-IV-Ext-CDM: 250 training / 400 held-out patients across
-appendicitis, cholecystitis, diverticulitis, and pancreatitis. Each team member is
-obtaining individual PhysioNet credentialing for MIMIC-IV-Ext-CDM (beyond our shared ACL
-ARR access). Code requirement: a Colab notebook that recomputes all reported metrics from
-our saved experiment logs; no raw case text appears in the logs we share, slides, or
-report.
+\section*{Data, and whether we have access}
+MIMIC-CDM 1.1 (from MIMIC-IV): 250 training / 400 held-out patients across appendicitis,
+cholecystitis, diverticulitis, and pancreatitis. We already have data access (completed
+MIMIC data-use training) and a working DxSkill pipeline (diagnosis tools,
+reflection/revision loop, checkpointed libraries), so no new access or infrastructure is
+needed to begin either direction.
 
 \section*{Approach and baselines}
 We define ``weak'' and ``strong'' by each model's measured no-skill accuracy on MIMIC-CDM
@@ -53,8 +51,7 @@ We define ``weak'' and ``strong'' by each model's measured no-skill accuracy on 
 \textbf{A -- weak-to-strong skill transfer (primary direction).} Baseline: DxSkill's
 student-self-revises (86.9\%) and teacher-edits-weak-student conditions. New: the full
 diagnoser$\times$reviser grid, \{weak,strong\}$\times$\{weak,strong\}, feedback fixed
-(reference diagnosis), \textbf{2 seeds per cell} since skill revision is sensitive to
-update order.
+(reference diagnosis). The weak-revises-strong cell is the key untested condition.
 
 \textbf{B -- validation-buffer gating (secondary direction).} Baseline: DxSkill's current
 ungated revision. New: a fixed holdout buffer of patients drawn from the training pool,
@@ -64,17 +61,17 @@ small buffer makes accept/reject decisions noisy; accept an update only if buffe
 doesn't regress beyond $\varepsilon$, else roll back to the prior checkpoint.
 
 \section*{How we'll evaluate it}
-\textbf{A:} accuracy on the frozen 400-patient set per diagnoser$\times$reviser cell,
-averaged over seeds, with paired patient-bootstrap intervals (as in our ACL ARR
-submission), to locate where weak-to-strong transfer helps or fails.
+\textbf{A:} accuracy on the frozen 400-patient set per diagnoser$\times$reviser cell, with
+paired patient-bootstrap intervals (as in our ACL ARR submission), to locate where
+weak-to-strong transfer helps or fails.
 \textbf{B:} buffer-set accuracy per checkpoint across both buffer sizes; held-out accuracy
 with vs.\ without the buffer; qualitative tracing of accepted/rejected edits (cf.\ our
 Figure 7 case).
 
 \section*{Milestones through Nov 30}
 \begin{itemize}
-\item \textbf{Oct 20--26:} Confirm scope split with Krishanu/Lakshmi; finalize the weak/strong grid and buffer-size/$\varepsilon$ design.
-\item \textbf{Oct 27--Nov 9 (A, primary):} Run all four diagnoser$\times$reviser cells, 2 seeds each.
+\item \textbf{Oct 20--26:} Finalize the weak/strong grid and buffer-size/$\varepsilon$ design.
+\item \textbf{Oct 27--Nov 9 (A, primary):} Run all four diagnoser$\times$reviser cells.
 \item \textbf{Nov 10--16 (A):} Analyze whether gains trace to execution or reflection strength.
 \item \textbf{Nov 10--23 (B, secondary):} Implement the holdout buffer (two sizes) and rollback; run the $\varepsilon$ sweep far enough to have \textbf{preliminary B results by Nov 23} for the presentation/report.
 \item \textbf{Nov 24--30:} Consolidate Direction A (primary) and Direction B (preliminary) results into the report.
